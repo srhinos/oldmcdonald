@@ -1,4 +1,4 @@
-# Old McDonalad
+# Old McDonald
 This is a pretty simple self bot that runs on discord.py and will farm for target discriminators as assigned in /oldmcdonald/bot.py
 
 You will also need to enter in your account's token and it's password in order for the bot to achieve its function.
