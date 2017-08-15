@@ -1,5 +1,6 @@
 import asyncio
 import random
+import aiohttp
 import discord
 
 class OldMcDonald(discord.Client):
@@ -8,10 +9,23 @@ class OldMcDonald(discord.Client):
         self.prefix = '!'
         self.ready = False
         self.target_discrims = ['0001', '6969', '1337']
-        self.preferred_name = 'ENTER USERNAME HERE'
-        self.token = 'ENTER TOKEN HERE'
-        self.password = 'ENTER PASSWORD HERE'
-        self.servers_to_join = ['discord.gg/GZQg2Eg', 'discord.gg/overwatch', 'discord.gg/wow', 'discord.gg/discord-developers', 'discord.gg/rainbow6']
+        self.preferred_name = "ENTER USERNAME HERE"
+        self.token = "ENTER TOKEN HERE"
+        self.password = "ENTER PASSWORD HERE"
+        self.servers_to_join = ['GZQg2Eg', 'overwatch', 'wow', 'GVEkq8q', 'DestinyReddit']
+        self.x_context_properties = 'eyJMb2NhdGlvbiI6IkpvaW4gYSBTZXJ2ZXIgTW9kYWwifQ=='
+        self.x_super_properties = 'eyJvcyI6IldpbmRvd3MiLCJicm93c2VyIjoiRGlzY29yZCBDbGllbnQiLCJyZWxlYXNlX2NoYW5uZWwiOiJzdGFibGUiLCJjbGllbnRfdmVyc2lvbiI6IjAuMC4yOTgiLCJvc192ZXJzaW9uIjoiMTAuMC4xNDM5MyJ9'
+        self.headers = {'x-context-properties': self.x_context_properties,
+                          'origin': 'https://discordapp.com',
+                          'accept-language': 'en-US',
+                          'x-super-properties': self.x_super_properties,
+                          'accept': '*/*',
+                          'referer': 'https://discordapp.com/channels/@me',
+                          'authority': 'discordapp.com',
+                          'user-agent': 'Mozilla/5.0 (Windows NT 10.0;) AppleWebKit/537.36 (KHTML, like Gecko) discord/0.0.298 Chrome/56.0.2924.87 Discord/1.6.11 Safari/537.36',
+                          'content-length': '0',
+                          'authorization': self.token,
+                          'accept-encoding': 'gzip, deflate'}
         print('init')
 
     # noinspection PyMethodOverriding
@@ -34,21 +48,29 @@ class OldMcDonald(discord.Client):
             new_name = random.choice([member.name for member in self.get_all_members() if (member.discriminator == self.user.discriminator and member.id != '77511942717046784')])
             try:
                 await self.edit_profile(password=self.password, username=new_name)
-                
-                if server.me.discriminator in self.target_discrims:
-                    print('target discriminator \'%s\' gotten! GLHF!' % server.me.discriminator)
+                await asyncio.sleep(10)
+                if self.user.discriminator in self.target_discrims:
+                    print('target discriminator \'%s\' gotten! GLHF!' % self.user.discriminator)
                     return
                 
-                await asyncio.sleep(2)
-                print('discrim is now \'%s\', waiting 24 hrs to change again' % server.me.discriminator)
+                print('discrim is now \'%s\', waiting 24 hrs to change again' % self.user.discriminator)
                 await self.edit_profile(password=self.password, username=self.preferred_name)
                 
             except discord.HTTPException:
                 print('Discrim change locked, gonna wait 24 hrs anyway!')
                 if self.user.name != self.preferred_name:
-                    await self.edit_profile(password=self.password, username=self.preferred_name)
+                    try:
+                        await self.edit_profile(password=self.password, username=self.preferred_name)
+                    except:
+                        print('\nTarget username "%s" appears to be taken causing you to be locked out till tomorrow! Sorry! Choose a new username that isn\'t locked or wait till tomorrow!' % self.preferred_name)
                 
             await asyncio.sleep(86400)
+    
+    async def ghetto_join_server(self, invite_id):
+         with aiohttp.ClientSession() as session:
+            async with session.post('https://discordapp.com/api/v6/invite/{}'.format(invite_id), headers=self.headers) as r:
+                assert r.status == 200
+                
 
     async def on_ready(self):
 
@@ -61,9 +83,13 @@ class OldMcDonald(discord.Client):
                 if str(x).zfill(4) not in unique_discrims:
                     final.append(str(x).zfill(4))
             if final:
+                print(final)
                 server = random.choice(self.servers_to_join)
-                await self.accept_invite(server)
-                print('Missing %s discriminators, joining %s' % (len(final), server))
+                invite = await self.get_invite(server)
+                if not invite.server.id in [servers.id for servers in self.servers]:
+                    await self.ghetto_join_server(server)
+                    print('Missing %s discriminators, joining %s' % (len(final), server))
+                    await asyncio.sleep(5)
             else:
                 break
             
